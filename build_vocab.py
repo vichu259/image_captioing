@@ -3,7 +3,7 @@ import pickle
 import argparse
 from collections import Counter
 from pycocotools.coco import COCO
-
+import json
 
 class Vocabulary(object):
     """Simple vocabulary wrapper."""
@@ -26,36 +26,51 @@ class Vocabulary(object):
     def __len__(self):
         return len(self.word2idx)
 
-def build_vocab(json, threshold):
-    """Build a simple vocabulary wrapper."""
-    coco = COCO(json)
-    counter = Counter()
-    ids = coco.anns.keys()
-    for i, id in enumerate(ids):
-        caption = str(coco.anns[id]['caption'])
-        tokens = nltk.tokenize.word_tokenize(caption.lower())
-        counter.update(tokens)
+def build_vocab(jsons, threshold,max_len=100,min_word_freq=5):
+    with open(jsons, 'r') as j:
+        data = json.load(j)
 
-        if (i+1) % 1000 == 0:
-            print("[{}/{}] Tokenized the captions.".format(i+1, len(ids)))
-
-    # If the word frequency is less than 'threshold', then the word is discarded.
-    words = [word for word, cnt in counter.items() if cnt >= threshold]
-
-    # Create a vocab wrapper and add some special tokens.
+    # Read image paths and captions for each image
+    train_image_paths = []
+    train_image_captions = []
+    val_image_paths = []
+    val_image_captions = []
+    test_image_paths = []
+    test_image_captions = []
+    word_freq = Counter()
     vocab = Vocabulary()
-    vocab.add_word('<pad>')
-    vocab.add_word('<start>')
-    vocab.add_word('<end>')
-    vocab.add_word('<unk>')
 
-    # Add the words to the vocabulary.
+    for img in data['images']:
+        captions = []
+        for c in img['sentences']:
+            # Update word frequency
+            word_freq.update(c['tokens'])
+            if len(c['tokens']) <= max_len:
+                captions.append(c['tokens'])
+
+        if len(captions) == 0:
+            continue
+
+        if img['split'] in {'train', 'restval'}:
+            train_image_captions.append(captions)
+        elif img['split'] in {'val'}:
+            val_image_captions.append(captions)
+        elif img['split'] in {'test'}:
+            test_image_captions.append(captions)
+
+    # Create word map
+    words = [w for w in word_freq.keys() if word_freq[w] > min_word_freq]
+    vocab.add_word('<pad>')
     for i, word in enumerate(words):
         vocab.add_word(word)
+    # word_map = {k: v + 1 for v, k in enumerate(words)}
+    vocab.add_word('<unk>')
+    vocab.add_word('<start>')
+    vocab.add_word('<end>')
     return vocab
 
 def main(args):
-    vocab = build_vocab(json=args.caption_path, threshold=args.threshold)
+    vocab = build_vocab(jsons=args.caption_path, threshold=args.threshold)
     vocab_path = args.vocab_path
     with open(vocab_path, 'wb') as f:
         pickle.dump(vocab, f)
@@ -65,12 +80,12 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--caption_path', type=str, 
-                        default='data/annotations/captions_train2014.json', 
+    parser.add_argument('--caption_path', type=str,
+                        default='data/annotations/dataset_coco.json',
                         help='path for train annotation file')
-    parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',
                         help='path for saving vocabulary wrapper')
-    parser.add_argument('--threshold', type=int, default=4, 
+    parser.add_argument('--threshold', type=int, default=4,
                         help='minimum word count threshold')
     args = parser.parse_args()
     main(args)

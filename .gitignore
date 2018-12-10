@@ -2,3 +2,5 @@
 data
 ./data/*
 ./__pycache__
+__pycache__/*
+BEST_checkpoint_coco_5_cap_per_img_5_min_word_freq.pth.tar

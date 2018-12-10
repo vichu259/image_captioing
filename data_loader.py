@@ -15,7 +15,7 @@ class CocoDataset(data.Dataset):
     def __init__(self, root, json, vocab, transform=None):
         """Set the path for images, captions and vocabulary wrapper.
 
-        Args:
+        Args:w
             root: image directory.
             json: coco annotation file path.
             vocab: vocabulary wrapper.
