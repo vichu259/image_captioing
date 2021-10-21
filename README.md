@@ -1,15 +1,12 @@
 # Image Captioning
 
+Baseline - https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/03-advanced/image_captioning
 
-Requirements:
-
-Python 2.x or Python3.x
-
-PyTorch 0.4
-
-CUDA 0.9 (optional)
-
-nltk 3.2.2
+## Requirements:
+ - Python 2.x or Python3.x
+ - PyTorch 0.4
+ - CUDA 0.9 (optional)
+ - nltk 3.2.2
 
 
 Train:
